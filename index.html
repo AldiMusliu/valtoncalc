@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="sq">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>ElectroCalculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #10141a;
+        --surface: #181f28;
+        --surface2: #212a35;
+        --line: #2b3542;
+        --copper: #e0973f;
+        --copper-dim: #8a5f2c;
+        --earth: #3ecf8e;
+        --danger: #e8615c;
+        --text: #eae6dd;
+        --text-dim: #8f99a3;
+        --mono: "JetBrains Mono", monospace;
+        --disp: "Space Grotesk", sans-serif;
+        --body: "Inter", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background:
+          radial-gradient(
+            circle at 20% 0%,
+            rgba(224, 151, 63, 0.08),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 90% 90%,
+            rgba(62, 207, 142, 0.06),
+            transparent 40%
+          ),
+          var(--bg);
+        color: var(--text);
+        font-family: var(--body);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+      ::selection {
+        background: var(--copper);
+        color: #10141a;
+      }
+
+      /* ---- circuit trace divider ----- */
+      .trace {
+        width: 100%;
+        height: 22px;
+        margin: 6px 0 18px;
+        background-repeat: no-repeat;
+        background-position: center;
+        opacity: 0.65;
+      }
+      .trace svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .trace circle {
+        fill: var(--copper);
+      }
+      .trace path {
+        stroke: var(--copper-dim);
+        stroke-width: 1.5;
+        fill: none;
+      }
+
+      /* ---- screens ---- */
+      .screen {
+        display: none;
+        min-height: 100vh;
+      }
+      .screen.active {
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ---- LOGIN ---- */
+      #loginScreen.active {
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 380px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 32px 28px 28px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      }
+      .login-card::before {
+        content: "";
+        position: absolute;
+        top: -40%;
+        left: -20%;
+        width: 180%;
+        height: 180%;
+        background: conic-gradient(
+          from 0deg,
+          transparent 0 340deg,
+          rgba(224, 151, 63, 0.15) 360deg
+        );
+        animation: spin 6s linear infinite;
+        pointer-events: none;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .brand-mark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+        position: relative;
+      }
+      .bolt {
+        width: 34px;
+        height: 34px;
+        flex: none;
+        color: var(--copper);
+      }
+      .brand-name {
+        font-family: var(--disp);
+        font-weight: 700;
+        font-size: 22px;
+        letter-spacing: 0.5px;
+      }
+      .brand-sub {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-dim);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 26px;
+        position: relative;
+      }
+      .field {
+        margin-bottom: 16px;
+        position: relative;
+      }
+      .field label {
+        display: block;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+      }
+      .field input,
+      .field select {
+        width: 100%;
+        padding: 11px 12px;
+        border-radius: 8px;
+        background: var(--surface2);
+        border: 1px solid var(--line);
+        color: var(--text);
+        font-size: 15px;
+        font-family: var(--body);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .field input:focus,
+      .field select:focus {
+        border-color: var(--copper);
+      }
+      .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: var(--copper);
+        color: #171008;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        letter-spacing: 0.3px;
+        transition:
+          filter 0.15s,
+          transform 0.05s;
+        font-family: var(--body);
+      }
+      .btn:hover {
+        filter: brightness(1.08);
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn.secondary {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text);
+      }
+      .btn.danger {
+        background: var(--danger);
+        color: #2a0d0b;
+      }
+      .login-error {
+        color: var(--danger);
+        font-size: 13px;
+        margin-top: 10px;
+        min-height: 16px;
+        font-family: var(--mono);
+      }
+      .login-hint {
+        margin-top: 18px;
+        font-size: 11.5px;
+        color: var(--text-dim);
+        line-height: 1.6;
+        border-top: 1px dashed var(--line);
+        padding-top: 14px;
+        font-family: var(--mono);
+      }
+
+      /* ---- MAIN APP ---- */
+      #mainScreen.active {
+      }
+      header.topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .topbar-left .bolt {
+        width: 24px;
+        height: 24px;
+      }
+      .topbar-left .brand-name {
+        font-size: 17px;
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        color: var(--text-dim);
+      }
+      .pill {
+        padding: 3px 9px;
+        border-radius: 20px;
+        background: var(--surface2);
+        border: 1px solid var(--line);
+        font-size: 11px;
+        letter-spacing: 0.5px;
+      }
+      .pill.admin {
+        color: var(--copper);
+        border-color: var(--copper-dim);
+      }
+      .logout-btn {
+        background: none;
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        padding: 6px 12px;
+        border-radius: 7px;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: var(--body);
+      }
+      .logout-btn:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+
+      nav#tabNav {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        padding: 10px 14px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        -webkit-overflow-scrolling: touch;
+      }
+      nav#tabNav::-webkit-scrollbar {
+        height: 4px;
+      }
+      .tab-btn {
+        flex: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--text-dim);
+        font-size: 13px;
+        cursor: pointer;
+        font-family: var(--body);
+        font-weight: 500;
+        white-space: nowrap;
+        transition: 0.15s;
+      }
+      .tab-btn:hover {
+        color: var(--text);
+      }
+      .tab-btn.active {
+        background: var(--surface2);
+        color: var(--copper);
+        border-color: var(--copper-dim);
+      }
+
+      main#tabContent {
+        padding: 22px 18px 60px;
+        max-width: 760px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      .tab-panel {
+        display: none;
+        animation: fade 0.25s ease;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      h2.tool-title {
+        font-family: var(--disp);
+        font-size: 21px;
+        margin: 0 0 4px;
+        color: var(--text);
+      }
+      p.tool-desc {
+        color: var(--text-dim);
+        font-size: 13.5px;
+        margin: 0 0 20px;
+        line-height: 1.5;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      @media (max-width: 520px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .result-box {
+        background: var(--surface2);
+        border: 1px solid var(--copper-dim);
+        border-radius: 10px;
+        padding: 16px 18px;
+        margin-top: 16px;
+      }
+      .result-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 7px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .result-row:last-child {
+        border-bottom: none;
+      }
+      .result-label {
+        color: var(--text-dim);
+        font-size: 13px;
+      }
+      .result-value {
+        font-family: var(--mono);
+        font-size: 16px;
+        color: var(--copper);
+        font-weight: 700;
+      }
+      .result-value.good {
+        color: var(--earth);
+      }
+      .result-value.bad {
+        color: var(--danger);
+      }
+      .badge-ok {
+        color: var(--earth);
+        font-family: var(--mono);
+        font-size: 12.5px;
+      }
+      .badge-bad {
+        color: var(--danger);
+        font-family: var(--mono);
+        font-size: 12.5px;
+      }
+
+      table.ref-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+      table.ref-table th,
+      table.ref-table td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+      table.ref-table th {
+        color: var(--copper);
+        font-family: var(--mono);
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      table.ref-table td {
+        color: var(--text-dim);
+      }
+      table.ref-table td.num {
+        font-family: var(--mono);
+        color: var(--text);
+      }
+
+      .info-section {
+        margin-bottom: 26px;
+      }
+      .info-section h3 {
+        font-family: var(--disp);
+        font-size: 15.5px;
+        color: var(--copper);
+        margin: 0 0 10px;
+      }
+      .info-section ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text-dim);
+        font-size: 13.5px;
+        line-height: 1.9;
+      }
+      .info-section li strong {
+        color: var(--text);
+      }
+
+      .user-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: var(--surface2);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border: 1px solid var(--line);
+      }
+      .user-row .uname {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .user-row .urole {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-left: 8px;
+      }
+      .user-row button {
+        background: none;
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        cursor: pointer;
+      }
+      .user-row button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-top: 10px;
+        font-style: italic;
+      }
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238f99a3'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 30px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <!-- ============ LOGIN SCREEN ============ -->
+      <div id="loginScreen" class="screen active">
+        <div class="login-card">
+          <div class="brand-mark">
+            <svg class="bolt" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M13 2 3 14h7l-1 8 11-14h-8l1-6z" />
+            </svg>
+            <div class="brand-name">ElectroCalculator</div>
+          </div>
+          <div class="brand-sub">
+            Llogaritës Elektrik &middot; Kyçu për të vazhduar
+          </div>
+
+          <div class="field">
+            <label>Emri i përdoruesit</label>
+            <input
+              type="text"
+              id="loginUser"
+              placeholder="p.sh. Valton"
+              autocapitalize="none"
+              autocorrect="off"
+            />
+          </div>
+          <div class="field">
+            <label>Fjalëkalimi</label>
+            <input type="password" id="loginPass" placeholder="••••••••" />
+          </div>
+          <button class="btn" onclick="handleLogin()">Kyçu</button>
+          <div class="login-error" id="loginError"></div>
+        </div>
+      </div>
+
+      <!-- ============ MAIN APP SCREEN ============ -->
+      <div id="mainScreen" class="screen">
+        <header class="topbar">
+          <div class="topbar-left">
+            <svg class="bolt" viewBox="0 0 24 24" fill="#e0973f">
+              <path d="M13 2 3 14h7l-1 8 11-14h-8l1-6z" />
+            </svg>
+            <div class="brand-name">ElectroCalculator</div>
+          </div>
+          <div class="topbar-right">
+            <span id="userPill" class="pill">Valton</span>
+            <button class="logout-btn" onclick="handleLogout()">Dil</button>
+          </div>
+        </header>
+
+        <nav id="tabNav"></nav>
+
+        <main id="tabContent">
+          <!-- TAB: kW -> A -->
+          <section id="tab-kwa" class="tab-panel">
+            <h2 class="tool-title">⚡ kW → Amper, Siguresë &amp; Kabllim</h2>
+            <p class="tool-desc">
+              Fut fuqinë për të llogaritur rrymën (A), sigurescën e rekomanduar
+              dhe prerjen e kabllit.
+            </p>
+            <div class="card">
+              <div class="grid2">
+                <div class="field">
+                  <label>Fuqia (kW)</label
+                  ><input type="number" id="kwaPower" placeholder="p.sh. 5" />
+                </div>
+                <div class="field">
+                  <label>Faza</label>
+                  <select id="kwaPhase" onchange="kwaPhaseChange()">
+                    <option value="1">1-Fazor (230V)</option>
+                    <option value="3">3-Fazor (400V)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Tensioni (V)</label
+                  ><input type="number" id="kwaVoltage" value="230" />
+                </div>
+                <div class="field">
+                  <label>Faktori i fuqisë (cosφ)</label
+                  ><input type="number" id="kwaCos" value="0.95" step="0.01" />
+                </div>
+              </div>
+              <button class="btn" onclick="calcKwA()" style="margin-top: 8px">
+                Llogarit
+              </button>
+              <div
+                class="result-box"
+                id="kwaResult"
+                style="display: none"
+              ></div>
+            </div>
+          </section>
+
+          <!-- TAB: Voltage Drop -->
+          <section id="tab-drop" class="tab-panel">
+            <h2 class="tool-title">📉 Rënia e Tensionit</h2>
+            <p class="tool-desc">
+              Llogarit humbjen e tensionit në bazë të gjatësisë, rrymës, prerjes
+              së kabllit dhe materialit.
+            </p>
+            <div class="card">
+              <div class="grid2">
+                <div class="field">
+                  <label>Gjatësia e kabllit (m)</label
+                  ><input type="number" id="dropLen" placeholder="p.sh. 25" />
+                </div>
+                <div class="field">
+                  <label>Faza</label>
+                  <select id="dropPhase">
+                    <option value="1">1-Fazor (230V)</option>
+                    <option value="3">3-Fazor (400V)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Rryma (A)</label
+                  ><input
+                    type="number"
+                    id="dropCurrent"
+                    placeholder="p.sh. 20"
+                  />
+                </div>
+                <div class="field">
+                  <label>Tensioni nominal (V)</label
+                  ><input type="number" id="dropVoltage" value="230" />
+                </div>
+                <div class="field">
+                  <label>Prerja e kabllit (mm²)</label>
+                  <select id="dropSection">
+                    <option>1.5</option>
+                    <option>2.5</option>
+                    <option>4</option>
+                    <option>6</option>
+                    <option>10</option>
+                    <option>16</option>
+                    <option>25</option>
+                    <option>35</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Materiali</label>
+                  <select id="dropMaterial">
+                    <option value="56">Bakër (Cu)</option>
+                    <option value="34">Alumin (Al)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>cosφ</label
+                  ><input type="number" id="dropCos" value="0.95" step="0.01" />
+                </div>
+              </div>
+              <button class="btn" onclick="calcDrop()" style="margin-top: 8px">
+                Llogarit
+              </button>
+              <div
+                class="result-box"
+                id="dropResult"
+                style="display: none"
+              ></div>
+            </div>
+          </section>
+
+          <!-- TAB: Earthing -->
+          <section id="tab-earth" class="tab-panel">
+            <h2 class="tool-title">🌍 Tokëzimi — Llogaritja e Rezistencës</h2>
+            <p class="tool-desc">
+              Llogarit rezistencën e tokëzimit (R) nga materiali dhe përmasat e
+              elektrodës dhe lloji i tokës, pastaj kontrollo pajtueshmërinë me
+              RCD-në.
+            </p>
+
+            <div class="card">
+              <h3
+                style="
+                  margin: 0 0 4px;
+                  font-family: var(--disp);
+                  font-size: 15px;
+                  color: var(--copper);
+                "
+              >
+                1. Elektroda e tokëzimit
+              </h3>
+              <p class="tool-desc" style="margin-bottom: 14px">
+                Formula e përdorur (shufër vertikale): R = ρ / (2πL) × ln(4L/d)
+              </p>
+              <div class="grid2">
+                <div class="field">
+                  <label>Materiali i elektrodës</label>
+                  <select id="earthMaterial">
+                    <option value="cu">Bakër (Cu)</option>
+                    <option value="al">Alumin (Al)</option>
+                    <option value="fe">Çelik i zinkuar / veshur me Cu</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Lloji i elektrodës</label>
+                  <select id="earthType">
+                    <option value="rod">Shufër vertikale (rrumbullakët)</option>
+                    <option value="strip">Shirit/Litar horizontal</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Trashësia / Diametri (mm)</label
+                  ><input type="number" id="earthDia" placeholder="p.sh. 16" />
+                </div>
+                <div class="field">
+                  <label>Gjatësia e elektrodës (m)</label
+                  ><input type="number" id="earthLen" placeholder="p.sh. 2" />
+                </div>
+                <div class="field">
+                  <label>Numri i shufrave (paralel)</label
+                  ><input type="number" id="earthCount" value="1" min="1" />
+                </div>
+                <div class="field">
+                  <label>Lloji i tokës</label>
+                  <select id="earthSoil" onchange="earthSoilChange()">
+                    <option value="15">
+                      Tokë e lagësht/argjilore (≈15 Ω·m)
+                    </option>
+                    <option value="50">
+                      Tokë bujqësore/dhé i zakonshëm (≈50 Ω·m)
+                    </option>
+                    <option value="100">Rërë e lagësht (≈100 Ω·m)</option>
+                    <option value="300">Zhavorr i thatë (≈300 Ω·m)</option>
+                    <option value="1000">Gurë/shkëmb (≈1000 Ω·m)</option>
+                    <option value="custom">Vlerë manuale…</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Rezistenca specifike e tokës ρ (Ω·m)</label
+                  ><input type="number" id="earthRho" value="50" />
+                </div>
+              </div>
+              <button
+                class="btn"
+                onclick="calcEarthElectrode()"
+                style="margin-top: 8px"
+              >
+                Llogarit Rezistencën
+              </button>
+              <div
+                class="result-box"
+                id="earthElecResult"
+                style="display: none"
+              ></div>
+            </div>
+
+            <div class="card">
+              <h3
+                style="
+                  margin: 0 0 4px;
+                  font-family: var(--disp);
+                  font-size: 15px;
+                  color: var(--copper);
+                "
+              >
+                2. Pajtueshmëria me RCD
+              </h3>
+              <p class="tool-desc" style="margin-bottom: 14px">
+                Kontrollo nëse rezistenca (e llogaritur ose e matur) plotëson
+                kushtin R ≤ Uₗ / I∆n
+              </p>
+              <div class="grid2">
+                <div class="field">
+                  <label>Rezistenca R (Ω) — e llogaritur ose e matur</label
+                  ><input type="number" id="earthR" placeholder="p.sh. 12" />
+                </div>
+                <div class="field">
+                  <label>Ndjeshmëria e RCD-së (mA)</label>
+                  <select id="earthRcd">
+                    <option value="30">30 mA</option>
+                    <option value="100">100 mA</option>
+                    <option value="300">300 mA</option>
+                    <option value="500">500 mA</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Tensioni maksimal i prekjes Uₗ (V)</label>
+                  <select id="earthU">
+                    <option value="50">50 V (ambiente normale)</option>
+                    <option value="25">
+                      25 V (ambiente të lagështa/rreziqe të shtuara)
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn" onclick="calcEarth()" style="margin-top: 8px">
+                Kontrollo
+              </button>
+              <div
+                class="result-box"
+                id="earthResult"
+                style="display: none"
+              ></div>
+            </div>
+          </section>
+
+          <!-- TAB: Lighting -->
+          <section id="tab-light" class="tab-panel">
+            <h2 class="tool-title">💡 Llogaritja e Ndriçimit</h2>
+            <p class="tool-desc">
+              Metoda e lumenit — sa ndriçues nevojiten për një hapësirë sipas
+              standardeve.
+            </p>
+            <div class="card">
+              <div class="grid2">
+                <div class="field">
+                  <label>Lloji i hapësirës</label>
+                  <select id="lightType" onchange="lightTypeChange()">
+                    <option value="300">Kuzhinë (300 lx)</option>
+                    <option value="150">Dhomë gjumi (150 lx)</option>
+                    <option value="200">Dhomë ndenjie / Living (200 lx)</option>
+                    <option value="500">Zyrë (500 lx)</option>
+                    <option value="200">Banjo (200 lx)</option>
+                    <option value="100">Korridor (100 lx)</option>
+                    <option value="150">Garazhë (150 lx)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Lux i kërkuar (E)</label
+                  ><input type="number" id="lightLux" value="300" />
+                </div>
+                <div class="field">
+                  <label>Gjatësia e dhomës (m)</label
+                  ><input type="number" id="lightLen" placeholder="p.sh. 4" />
+                </div>
+                <div class="field">
+                  <label>Gjerësia e dhomës (m)</label
+                  ><input type="number" id="lightWid" placeholder="p.sh. 3" />
+                </div>
+                <div class="field">
+                  <label>Fluksi për ndriçues (lm)</label
+                  ><input type="number" id="lightLm" value="2000" />
+                </div>
+                <div class="field">
+                  <label>Faktori i shfrytëzimit (UF)</label
+                  ><input type="number" id="lightUf" value="0.6" step="0.05" />
+                </div>
+              </div>
+              <button class="btn" onclick="calcLight()" style="margin-top: 8px">
+                Llogarit
+              </button>
+              <div
+                class="result-box"
+                id="lightResult"
+                style="display: none"
+              ></div>
+            </div>
+          </section>
+
+          <!-- TAB: Sockets -->
+          <section id="tab-sockets" class="tab-panel">
+            <h2 class="tool-title">🔌 Llogaritja e Prizave</h2>
+            <p class="tool-desc">
+              Fut përmasat e dhomës për të parë sa priza minimalisht
+              rekomandohen.
+            </p>
+            <div class="card">
+              <div class="grid2">
+                <div class="field">
+                  <label>Lloji i dhomës</label>
+                  <select id="sockType">
+                    <option value="6">Kuzhinë (min. 6)</option>
+                    <option value="3">Dhomë gjumi (min. 3)</option>
+                    <option value="4">Dhomë ndenjie (min. 4)</option>
+                    <option value="4">Zyrë (min. 4)</option>
+                    <option value="2">Banjo (min. 2, IP44+)</option>
+                    <option value="2">Korridor (min. 2)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Gjatësia e dhomës (m)</label
+                  ><input type="number" id="sockLen" placeholder="p.sh. 4" />
+                </div>
+                <div class="field">
+                  <label>Gjerësia e dhomës (m)</label
+                  ><input type="number" id="sockWid" placeholder="p.sh. 3.5" />
+                </div>
+              </div>
+              <button
+                class="btn"
+                onclick="calcSockets()"
+                style="margin-top: 8px"
+              >
+                Llogarit
+              </button>
+              <div
+                class="result-box"
+                id="sockResult"
+                style="display: none"
+              ></div>
+            </div>
+          </section>
+
+          <!-- TAB: Power Factor -->
+          <section id="tab-pf" class="tab-panel">
+            <h2 class="tool-title">🧮 Korrigjimi i Faktorit të Fuqisë</h2>
+            <p class="tool-desc">
+              Llogarit kondensatorin (kVAr / µF) e nevojshëm për të përmirësuar
+              cosφ.
+            </p>
+            <div class="card">
+              <div class="grid2">
+                <div class="field">
+                  <label>Fuqia aktive P (kW)</label
+                  ><input type="number" id="pfPower" placeholder="p.sh. 10" />
+                </div>
+                <div class="field">
+                  <label>cosφ aktual</label
+                  ><input type="number" id="pfCos1" value="0.75" step="0.01" />
+                </div>
+                <div class="field">
+                  <label>cosφ i dëshiruar</label
+                  ><input type="number" id="pfCos2" value="0.95" step="0.01" />
+                </div>
+                <div class="field">
+                  <label>Tensioni (V)</label
+                  ><input type="number" id="pfVoltage" value="400" />
+                </div>
+              </div>
+              <button class="btn" onclick="calcPf()" style="margin-top: 8px">
+                Llogarit
+              </button>
+              <div class="result-box" id="pfResult" style="display: none"></div>
+            </div>
+          </section>
+
+          <!-- TAB: Notes -->
+          <section id="tab-notes" class="tab-panel">
+            <h2 class="tool-title">📝 Shënime &amp; Materiale</h2>
+            <p class="tool-desc">
+              Hapësirë e lirë për shënime nga objekti, plus një listë e shpejtë
+              e materialeve/pajisjeve.
+            </p>
+
+            <div class="card">
+              <h3
+                style="
+                  margin: 0 0 10px;
+                  font-family: var(--disp);
+                  font-size: 15px;
+                  color: var(--copper);
+                "
+              >
+                Shënimet e mia
+              </h3>
+              <textarea
+                id="freeNotes"
+                placeholder="Shkruaj këtu shënime, masa, adresa, çmime, kujtesa..."
+                style="
+                  width: 100%;
+                  min-height: 140px;
+                  resize: vertical;
+                  background: var(--surface2);
+                  border: 1px solid var(--line);
+                  border-radius: 8px;
+                  padding: 12px;
+                  color: var(--text);
+                  font-family: var(--body);
+                  font-size: 14px;
+                  outline: none;
+                "
+                oninput="saveNotes()"
+              ></textarea>
+              <div class="note" id="notesSavedMsg">Ruhet automatikisht.</div>
+            </div>
+
+            <div class="card">
+              <h3
+                style="
+                  margin: 0 0 10px;
+                  font-family: var(--disp);
+                  font-size: 15px;
+                  color: var(--copper);
+                "
+              >
+                Lista e materialeve
+              </h3>
+              <div class="grid2">
+                <div class="field">
+                  <label>Emri i materialit</label
+                  ><input
+                    type="text"
+                    id="matName"
+                    placeholder="p.sh. Kabllo NYM-J 3x2.5"
+                  />
+                </div>
+                <div class="field">
+                  <label>Sasia</label
+                  ><input type="text" id="matQty" placeholder="p.sh. 40 m" />
+                </div>
+              </div>
+              <button class="btn secondary" onclick="addMaterial()">
+                + Shto në listë
+              </button>
+              <div id="materialList" style="margin-top: 14px"></div>
+            </div>
+          </section>
+
+          <!-- TAB: Info / Standards -->
+          <section id="tab-info" class="tab-panel">
+            <h2 class="tool-title">📘 Standarde &amp; Informata</h2>
+            <p class="tool-desc">
+              Referenca të shpejta për instalime elektrike shtëpiake.
+            </p>
+            <div class="trace">
+              <svg viewBox="0 0 600 22" preserveAspectRatio="none">
+                <path d="M0 11 H160 L180 3 H420 L440 11 H600" />
+                <circle cx="180" cy="3" r="2.5" />
+                <circle cx="440" cy="11" r="2.5" />
+                <circle cx="0" cy="11" r="2.5" />
+                <circle cx="600" cy="11" r="2.5" />
+              </svg>
+            </div>
+
+            <div class="info-section">
+              <h3>Lartësia e prizave dhe ndërprerësve</h3>
+              <ul>
+                <li>
+                  <strong>Prizat (dhoma, korridor):</strong> 30 cm nga dyshemeja
+                </li>
+                <li>
+                  <strong>Prizat në kuzhinë (mbi banak):</strong> 110–120 cm nga
+                  dyshemeja
+                </li>
+                <li>
+                  <strong>Ndërprerësit e dritave:</strong> 90–110 cm (zakonisht
+                  105 cm)
+                </li>
+                <li>
+                  <strong>Ndërprerësi pranë derës:</strong> 15 cm nga korniza e
+                  derës
+                </li>
+                <li>
+                  <strong>Priza pranë lavamanit/gurit të ujit:</strong> minimum
+                  60 cm larg
+                </li>
+              </ul>
+            </div>
+
+            <div class="info-section">
+              <h3>Zonat në banjo (kërkesa IP)</h3>
+              <ul>
+                <li>
+                  <strong>Zona 0</strong> (brenda vaskës/dushit): asnjë pajisje
+                  elektrike
+                </li>
+                <li>
+                  <strong>Zona 1</strong> (deri 2.25 m lart): min. IP44, vetëm
+                  qarqe SELV të ulëta
+                </li>
+                <li>
+                  <strong>Zona 2</strong> (0.6 m rreth zonës 1): min. IP44
+                </li>
+                <li>
+                  <strong>Jashtë zonave:</strong> priza standarde, min. 60 cm
+                  larg burimit të ujit
+                </li>
+              </ul>
+            </div>
+
+            <div class="info-section">
+              <h3>Ngjyrat e përçuesve</h3>
+              <ul>
+                <li><strong>Kafe / e zezë:</strong> Fazë (L)</li>
+                <li><strong>Blu:</strong> Neutral (N)</li>
+                <li><strong>Verdhë–jeshile:</strong> Tokëzim (PE)</li>
+              </ul>
+            </div>
+
+            <div class="info-section">
+              <h3>Automatët e Sigurisë (MCB) ↔ Prerja e kabllit (Cu)</h3>
+              <table class="ref-table">
+                <tr>
+                  <th>Prerja e kabllit (mm²)</th>
+                  <th>Siguresa automatike (A)</th>
+                </tr>
+                <tr>
+                  <td class="num">1.5</td>
+                  <td class="num">10 A</td>
+                </tr>
+                <tr>
+                  <td class="num">2.5</td>
+                  <td class="num">16 A</td>
+                </tr>
+                <tr>
+                  <td class="num">4</td>
+                  <td class="num">20 A</td>
+                </tr>
+                <tr>
+                  <td class="num">6</td>
+                  <td class="num">25 A</td>
+                </tr>
+                <tr>
+                  <td class="num">10</td>
+                  <td class="num">32 A</td>
+                </tr>
+                <tr>
+                  <td class="num">16</td>
+                  <td class="num">40 A</td>
+                </tr>
+                <tr>
+                  <td class="num">25</td>
+                  <td class="num">63 A</td>
+                </tr>
+                <tr>
+                  <td class="num">35</td>
+                  <td class="num">80 A</td>
+                </tr>
+                <tr>
+                  <td class="num">50</td>
+                  <td class="num">100 A</td>
+                </tr>
+              </table>
+              <p class="note" style="margin-top: 8px">
+                Kjo është tabela që përdor edhe llogaritësi kW → A
+                automatikisht.
+              </p>
+            </div>
+
+            <div class="info-section">
+              <h3>Rezistenca specifike e tokës (ρ) — vlera tipike</h3>
+              <table class="ref-table">
+                <tr>
+                  <th>Lloji i tokës</th>
+                  <th>ρ (Ω·m)</th>
+                </tr>
+                <tr>
+                  <td>Tokë e lagësht / argjilore</td>
+                  <td class="num">~15</td>
+                </tr>
+                <tr>
+                  <td>Tokë bujqësore / dhé i zakonshëm</td>
+                  <td class="num">~50</td>
+                </tr>
+                <tr>
+                  <td>Rërë e lagësht</td>
+                  <td class="num">~100</td>
+                </tr>
+                <tr>
+                  <td>Zhavorr i thatë</td>
+                  <td class="num">~300</td>
+                </tr>
+                <tr>
+                  <td>Gurë / shkëmb</td>
+                  <td class="num">~1000</td>
+                </tr>
+              </table>
+              <p class="note" style="margin-top: 8px">
+                Përdoren te tabi "Tokëzim" për të llogaritur R nga përmasat e
+                elektrodës.
+              </p>
+            </div>
+
+            <div class="info-section">
+              <h3>Lux rekomanduar sipas hapësirës</h3>
+              <table class="ref-table">
+                <tr>
+                  <th>Hapësira</th>
+                  <th>Lux (lx)</th>
+                </tr>
+                <tr>
+                  <td>Dhomë gjumi</td>
+                  <td class="num">150</td>
+                </tr>
+                <tr>
+                  <td>Dhomë ndenjie / Living</td>
+                  <td class="num">200</td>
+                </tr>
+                <tr>
+                  <td>Kuzhinë</td>
+                  <td class="num">300</td>
+                </tr>
+                <tr>
+                  <td>Zyrë</td>
+                  <td class="num">500</td>
+                </tr>
+                <tr>
+                  <td>Korridor</td>
+                  <td class="num">100</td>
+                </tr>
+                <tr>
+                  <td>Banjo</td>
+                  <td class="num">200</td>
+                </tr>
+              </table>
+            </div>
+
+            <p class="note">
+              ⚠️ Këto vlera janë referenca praktike të përgjithshme. Për
+              projekte reale gjithmonë verifiko me normat lokale (p.sh.
+              standardet IEC/EN përkatëse) dhe me një elektricist të licencuar.
+            </p>
+          </section>
+
+          <!-- TAB: Admin -->
+          <section id="tab-admin" class="tab-panel">
+            <h2 class="tool-title">👤 Menaxhimi i Përdoruesve</h2>
+            <p class="tool-desc">
+              Shto ose hiq përdorues të aplikacionit (vetëm Admin).
+            </p>
+            <div class="card">
+              <div class="grid2">
+                <div class="field">
+                  <label>Emri i ri i përdoruesit</label
+                  ><input
+                    type="text"
+                    id="newUsername"
+                    placeholder="p.sh. Elektricisti1"
+                  />
+                </div>
+                <div class="field">
+                  <label>Fjalëkalimi</label
+                  ><input
+                    type="text"
+                    id="newPassword"
+                    placeholder="p.sh. Fjalekalim.1"
+                  />
+                </div>
+                <div class="field">
+                  <label>Roli</label>
+                  <select id="newRole">
+                    <option value="user">Përdorues</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn" onclick="addUser()">+ Shto Përdorues</button>
+              <div id="addUserMsg" class="login-error"></div>
+            </div>
+            <div class="card">
+              <h3
+                style="
+                  margin-top: 0;
+                  font-family: var(--disp);
+                  font-size: 15px;
+                  color: var(--copper);
+                "
+              >
+                Përdoruesit ekzistues
+              </h3>
+              <div id="userList"></div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      /* ================= STATE / STORAGE ================= */
+      const DEFAULT_USERS = [
+        { username: "Valton", password: "Valton.1", role: "admin" },
+      ];
+
+      function loadUsers() {
+        try {
+          const raw = localStorage.getItem("ec_users_v1");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length) return parsed;
+          }
+        } catch (e) {
+          /* storage unavailable, fall back to defaults in memory */
+        }
+        return JSON.parse(JSON.stringify(DEFAULT_USERS));
+      }
+      function saveUsers() {
+        try {
+          localStorage.setItem("ec_users_v1", JSON.stringify(users));
+        } catch (e) {
+          /* running in a sandbox without storage — state persists in memory only for this session */
+        }
+      }
+
+      let users = loadUsers();
+      let currentUser = null;
+
+      const TABS = [
+        { id: "kwa", label: "kW → A", roles: ["admin", "user"] },
+        { id: "drop", label: "Rënie Tensioni", roles: ["admin", "user"] },
+        { id: "earth", label: "Tokëzim", roles: ["admin", "user"] },
+        { id: "light", label: "Ndriçim", roles: ["admin", "user"] },
+        { id: "sockets", label: "Priza", roles: ["admin", "user"] },
+        { id: "pf", label: "cosφ", roles: ["admin", "user"] },
+        { id: "notes", label: "Shënime", roles: ["admin", "user"] },
+        { id: "info", label: "Info", roles: ["admin", "user"] },
+        { id: "admin", label: "⚙ Admin", roles: ["admin"] },
+      ];
+
+      /* ================= LOGIN / LOGOUT ================= */
+      function handleLogin() {
+        const u = document.getElementById("loginUser").value.trim();
+        const p = document.getElementById("loginPass").value;
+        const err = document.getElementById("loginError");
+        const found = users.find(
+          (x) =>
+            x.username.toLowerCase() === u.toLowerCase() && x.password === p,
+        );
+        if (!found) {
+          err.textContent =
+            "Emri i përdoruesit ose fjalëkalimi është i gabuar.";
+          return;
+        }
+        err.textContent = "";
+        currentUser = found;
+        document.getElementById("loginScreen").classList.remove("active");
+        document.getElementById("mainScreen").classList.add("active");
+        renderNav();
+        showTab("kwa");
+        const pill = document.getElementById("userPill");
+        pill.textContent =
+          currentUser.username +
+          (currentUser.role === "admin" ? " · Admin" : "");
+        pill.className =
+          "pill" + (currentUser.role === "admin" ? " admin" : "");
+        if (currentUser.role === "admin") renderUserList();
+      }
+      function handleLogout() {
+        currentUser = null;
+        document.getElementById("mainScreen").classList.remove("active");
+        document.getElementById("loginScreen").classList.add("active");
+        document.getElementById("loginUser").value = "";
+        document.getElementById("loginPass").value = "";
+      }
+
+      /* ================= NAV / TABS ================= */
+      function renderNav() {
+        const nav = document.getElementById("tabNav");
+        nav.innerHTML = "";
+        TABS.filter((t) => t.roles.includes(currentUser.role)).forEach((t) => {
+          const btn = document.createElement("button");
+          btn.className = "tab-btn";
+          btn.id = "navbtn-" + t.id;
+          btn.textContent = t.label;
+          btn.onclick = () => showTab(t.id);
+          nav.appendChild(btn);
+        });
+      }
+      function showTab(id) {
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((p) => p.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("tab-" + id).classList.add("active");
+        const btn = document.getElementById("navbtn-" + id);
+        if (btn) btn.classList.add("active");
+        if (id === "admin") renderUserList();
+        if (id === "notes") {
+          document.getElementById("freeNotes").value = loadNotesData();
+          renderMaterials();
+        }
+      }
+
+      /* ================= ADMIN: USER MANAGEMENT ================= */
+      function addUser() {
+        const name = document.getElementById("newUsername").value.trim();
+        const pass = document.getElementById("newPassword").value;
+        const role = document.getElementById("newRole").value;
+        const msg = document.getElementById("addUserMsg");
+        if (!name || !pass) {
+          msg.textContent = "Plotëso emrin dhe fjalëkalimin.";
+          return;
+        }
+        if (
+          users.some((u) => u.username.toLowerCase() === name.toLowerCase())
+        ) {
+          msg.textContent = "Ky përdorues ekziston tashmë.";
+          return;
+        }
+        users.push({ username: name, password: pass, role });
+        saveUsers();
+        document.getElementById("newUsername").value = "";
+        document.getElementById("newPassword").value = "";
+        msg.style.color = "var(--earth)";
+        msg.textContent = "Përdoruesi u shtua me sukses.";
+        renderUserList();
+      }
+      function removeUser(username) {
+        if (username === currentUser.username) {
+          return;
+        }
+        if (username === "Valton") {
+          return;
+        }
+        users = users.filter((u) => u.username !== username);
+        saveUsers();
+        renderUserList();
+      }
+      function renderUserList() {
+        const box = document.getElementById("userList");
+        box.innerHTML = "";
+        users.forEach((u) => {
+          const row = document.createElement("div");
+          row.className = "user-row";
+          const isProtected =
+            u.username === "Valton" || u.username === currentUser.username;
+          row.innerHTML = `
+      <div><span class="uname">${u.username}</span><span class="urole">${u.role}</span></div>
+      <button ${isProtected ? "disabled" : ""} onclick="removeUser('${u.username}')">Hiq</button>
+    `;
+          box.appendChild(row);
+        });
+      }
+
+      /* ================= kW -> A / Siguresa / Kabllim ================= */
+      function kwaPhaseChange() {
+        const phase = document.getElementById("kwaPhase").value;
+        document.getElementById("kwaVoltage").value = phase === "3" ? 400 : 230;
+      }
+      /* Tabela standarde: prerja e kabllit (Cu) <-> siguresa automatike (MCB) rekomanduar */
+      const MCB_TABLE = [
+        { mm2: "1.5", A: 10 },
+        { mm2: "2.5", A: 16 },
+        { mm2: "4", A: 20 },
+        { mm2: "6", A: 25 },
+        { mm2: "10", A: 32 },
+        { mm2: "16", A: 40 },
+        { mm2: "25", A: 63 },
+        { mm2: "35", A: 80 },
+        { mm2: "50", A: 100 },
+      ];
+      const BREAKER_SIZES = MCB_TABLE.map((r) => r.A);
+      function selectBreaker(I) {
+        return BREAKER_SIZES.find((s) => s >= I) || null;
+      }
+      function selectCable(breakerA) {
+        const row =
+          MCB_TABLE.find((r) => r.A === breakerA) ||
+          MCB_TABLE.find((r) => breakerA <= r.A);
+        return row ? row.mm2 : "≥50 (kërkohet llogaritje e veçantë)";
+      }
+      function calcKwA() {
+        const P = parseFloat(document.getElementById("kwaPower").value);
+        const phase = document.getElementById("kwaPhase").value;
+        const V = parseFloat(document.getElementById("kwaVoltage").value);
+        const cos = parseFloat(document.getElementById("kwaCos").value) || 0.95;
+        const box = document.getElementById("kwaResult");
+        if (!P || !V) {
+          box.style.display = "none";
+          return;
+        }
+        let I;
+        if (phase === "1") I = (P * 1000) / (V * cos);
+        else I = (P * 1000) / (Math.sqrt(3) * V * cos);
+        const breaker = selectBreaker(I);
+        const cable = breaker
+          ? selectCable(breaker)
+          : "≥125A – projekt special";
+        box.style.display = "block";
+        box.innerHTML = `
+    <div class="result-row"><span class="result-label">Rryma e llogaritur (I)</span><span class="result-value">${I.toFixed(2)} A</span></div>
+    <div class="result-row"><span class="result-label">Siguresa e rekomanduar</span><span class="result-value">${breaker ? breaker + " A" : "mbi 125A"}</span></div>
+    <div class="result-row"><span class="result-label">Prerja e kabllit (Cu)</span><span class="result-value">${cable} mm²</span></div>
+  `;
+      }
+
+      /* ================= Voltage Drop ================= */
+      function calcDrop() {
+        const L = parseFloat(document.getElementById("dropLen").value);
+        const I = parseFloat(document.getElementById("dropCurrent").value);
+        const V = parseFloat(document.getElementById("dropVoltage").value);
+        const S = parseFloat(document.getElementById("dropSection").value);
+        const k = parseFloat(document.getElementById("dropMaterial").value);
+        const cos =
+          parseFloat(document.getElementById("dropCos").value) || 0.95;
+        const phase = document.getElementById("dropPhase").value;
+        const box = document.getElementById("dropResult");
+        if (!L || !I || !V || !S) {
+          box.style.display = "none";
+          return;
+        }
+        let dU;
+        if (phase === "1") dU = (2 * L * I * cos) / (k * S);
+        else dU = (Math.sqrt(3) * L * I * cos) / (k * S);
+        const percent = (dU / V) * 100;
+        const limit = 4; // kufi praktik i rekomanduar (3-5%)
+        const compliant = percent <= limit;
+        box.style.display = "block";
+        box.innerHTML = `
+    <div class="result-row"><span class="result-label">Rënia e tensionit (ΔU)</span><span class="result-value">${dU.toFixed(2)} V</span></div>
+    <div class="result-row"><span class="result-label">Në përqindje</span><span class="result-value ${compliant ? "good" : "bad"}">${percent.toFixed(2)} %</span></div>
+    <div class="result-row"><span class="result-label">Kufiri i rekomanduar</span><span class="result-value">≤ ${limit}%</span></div>
+    <div class="result-row"><span class="result-label">Vlerësimi</span><span class="${compliant ? "badge-ok" : "badge-bad"}">${compliant ? "✔ Brenda kufirit" : "✘ Tejkalon kufirin – rrit prerjen e kabllit"}</span></div>
+  `;
+      }
+
+      /* ================= Earthing: electrode resistance ================= */
+      function earthSoilChange() {
+        const v = document.getElementById("earthSoil").value;
+        if (v !== "custom") {
+          document.getElementById("earthRho").value = v;
+        }
+      }
+      function calcEarthElectrode() {
+        const material = document.getElementById("earthMaterial").value;
+        const type = document.getElementById("earthType").value;
+        const d_mm = parseFloat(document.getElementById("earthDia").value);
+        const L = parseFloat(document.getElementById("earthLen").value);
+        const n = Math.max(
+          1,
+          parseInt(document.getElementById("earthCount").value) || 1,
+        );
+        const rho = parseFloat(document.getElementById("earthRho").value);
+        const box = document.getElementById("earthElecResult");
+        if (!d_mm || !L || !rho) {
+          box.style.display = "none";
+          return;
+        }
+        const d = d_mm / 1000; // meters
+
+        let R_single;
+        if (type === "rod") {
+          R_single = (rho / (2 * Math.PI * L)) * Math.log((4 * L) / d);
+        } else {
+          // shirit/litar horizontal, thellësi tipike gropimi h=0.6m, gjerësia ~ d
+          const h = 0.6;
+          R_single = (rho / (Math.PI * L)) * Math.log((2 * L * L) / (d * h));
+        }
+        // paralelizim i përafërt për n shufra/shirita (nuk llogarit efektin e distancës mes tyre)
+        const R_total = R_single / n;
+
+        const materialLabel =
+          material === "cu"
+            ? "Bakër"
+            : material === "al"
+              ? "Alumin"
+              : "Çelik i zinkuar/veshur me Cu";
+        let materialNote = "";
+        if (material === "al") {
+          materialNote =
+            "⚠️ Alumini nuk rekomandohet për elektroda të varrosura drejtpërdrejt në tokë (korrozion i shpejtë) — përdore vetëm për përcjellës mbi tokë.";
+        }
+
+        box.style.display = "block";
+        box.innerHTML = `
+    <div class="result-row"><span class="result-label">Materiali</span><span class="result-value">${materialLabel}</span></div>
+    <div class="result-row"><span class="result-label">Rezistenca e 1 elektrode</span><span class="result-value">${R_single.toFixed(2)} Ω</span></div>
+    <div class="result-row"><span class="result-label">Rezistenca totale (${n} elektroda, paralel)</span><span class="result-value">${R_total.toFixed(2)} Ω</span></div>
+    ${materialNote ? `<div class="note">${materialNote}</div>` : ""}
+    <button class="btn secondary" style="margin-top:10px;" onclick="document.getElementById('earthR').value='${R_total.toFixed(2)}';document.getElementById('earthR').scrollIntoView({behavior:'smooth',block:'center'});">Përdor këtë vlerë te kontrolli i RCD-së ↓</button>
+  `;
+      }
+
+      /* ================= Earthing: RCD compliance ================= */
+      function calcEarth() {
+        const R = parseFloat(document.getElementById("earthR").value);
+        const rcd_mA = parseFloat(document.getElementById("earthRcd").value);
+        const Ulim = parseFloat(document.getElementById("earthU").value);
+        const box = document.getElementById("earthResult");
+        if (!R) {
+          box.style.display = "none";
+          return;
+        }
+        const Idn = rcd_mA / 1000;
+        const Rmax = Ulim / Idn;
+        const compliant = R <= Rmax;
+        box.style.display = "block";
+        box.innerHTML = `
+    <div class="result-row"><span class="result-label">Rezistenca max. e lejuar (R = Uₗ/I∆n)</span><span class="result-value">${Rmax.toFixed(1)} Ω</span></div>
+    <div class="result-row"><span class="result-label">Rezistenca e matur</span><span class="result-value">${R} Ω</span></div>
+    <div class="result-row"><span class="result-label">Vlerësimi</span><span class="${compliant ? "badge-ok" : "badge-bad"}">${compliant ? "✔ Tokëzimi është konform" : "✘ Nuk plotëson kushtin – kërkohet përmirësim i tokëzimit"}</span></div>
+  `;
+      }
+
+      /* ================= Lighting ================= */
+      function lightTypeChange() {
+        document.getElementById("lightLux").value =
+          document.getElementById("lightType").value;
+      }
+      function calcLight() {
+        const E = parseFloat(document.getElementById("lightLux").value);
+        const L = parseFloat(document.getElementById("lightLen").value);
+        const W = parseFloat(document.getElementById("lightWid").value);
+        const lm = parseFloat(document.getElementById("lightLm").value);
+        const UF = parseFloat(document.getElementById("lightUf").value) || 0.6;
+        const MF = 0.8;
+        const box = document.getElementById("lightResult");
+        if (!E || !L || !W || !lm) {
+          box.style.display = "none";
+          return;
+        }
+        const A = L * W;
+        const N = Math.ceil((E * A) / (lm * UF * MF));
+        box.style.display = "block";
+        box.innerHTML = `
+    <div class="result-row"><span class="result-label">Sipërfaqja</span><span class="result-value">${A.toFixed(1)} m²</span></div>
+    <div class="result-row"><span class="result-label">Fluksi total i nevojshëm</span><span class="result-value">${Math.round((E * A) / UF / MF)} lm</span></div>
+    <div class="result-row"><span class="result-label">Nr. i ndriçuesve rekomanduar</span><span class="result-value">${N}</span></div>
+  `;
+      }
+
+      /* ================= Sockets ================= */
+      function calcSockets() {
+        const minCount = parseFloat(document.getElementById("sockType").value);
+        const L = parseFloat(document.getElementById("sockLen").value);
+        const W = parseFloat(document.getElementById("sockWid").value);
+        const box = document.getElementById("sockResult");
+        if (!L || !W) {
+          box.style.display = "none";
+          return;
+        }
+        const perimeter = 2 * (L + W);
+        const byPerimeter = Math.ceil(perimeter / 3);
+        const recommended = Math.max(byPerimeter, minCount);
+        box.style.display = "block";
+        box.innerHTML = `
+    <div class="result-row"><span class="result-label">Perimetri i dhomës</span><span class="result-value">${perimeter.toFixed(1)} m</span></div>
+    <div class="result-row"><span class="result-label">Bazuar në perimetër (1 priz/~3m)</span><span class="result-value">${byPerimeter}</span></div>
+    <div class="result-row"><span class="result-label">Nr. i prizave rekomanduar</span><span class="result-value">${recommended}</span></div>
+  `;
+      }
+
+      /* ================= Notes & Materials ================= */
+      function loadNotesData() {
+        try {
+          return localStorage.getItem("ec_notes_v1") || "";
+        } catch (e) {
+          return "";
+        }
+      }
+      function saveNotes() {
+        const val = document.getElementById("freeNotes").value;
+        try {
+          localStorage.setItem("ec_notes_v1", val);
+        } catch (e) {}
+      }
+      function loadMaterials() {
+        try {
+          const raw = localStorage.getItem("ec_materials_v1");
+          if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        return [];
+      }
+      function saveMaterialsData() {
+        try {
+          localStorage.setItem("ec_materials_v1", JSON.stringify(materials));
+        } catch (e) {}
+      }
+      let materials = loadMaterials();
+      function addMaterial() {
+        const name = document.getElementById("matName").value.trim();
+        const qty = document.getElementById("matQty").value.trim();
+        if (!name) return;
+        materials.push({ name, qty });
+        saveMaterialsData();
+        document.getElementById("matName").value = "";
+        document.getElementById("matQty").value = "";
+        renderMaterials();
+      }
+      function removeMaterial(idx) {
+        materials.splice(idx, 1);
+        saveMaterialsData();
+        renderMaterials();
+      }
+      function renderMaterials() {
+        const box = document.getElementById("materialList");
+        if (!box) return;
+        box.innerHTML = "";
+        if (materials.length === 0) {
+          box.innerHTML =
+            '<div class="note">Lista është ende bosh — shto materialin e parë më sipër.</div>';
+          return;
+        }
+        materials.forEach((m, idx) => {
+          const row = document.createElement("div");
+          row.className = "user-row";
+          row.innerHTML = `
+      <div><span class="uname">${m.name}</span><span class="urole">${m.qty || ""}</span></div>
+      <button onclick="removeMaterial(${idx})">Hiq</button>
+    `;
+          box.appendChild(row);
+        });
+      }
+
+      /* ================= Power Factor Correction ================= */
+      function calcPf() {
+        const P = parseFloat(document.getElementById("pfPower").value);
+        const c1 = parseFloat(document.getElementById("pfCos1").value);
+        const c2 = parseFloat(document.getElementById("pfCos2").value);
+        const V = parseFloat(document.getElementById("pfVoltage").value);
+        const box = document.getElementById("pfResult");
+        if (!P || !c1 || !c2 || !V) {
+          box.style.display = "none";
+          return;
+        }
+        const tan1 = Math.tan(Math.acos(c1));
+        const tan2 = Math.tan(Math.acos(c2));
+        const Qc = P * (tan1 - tan2); // kVAr
+        const f = 50;
+        const C_uF = (Qc * 1e6 * 1000) / (2 * Math.PI * f * V * V); // total capacitance in µF (approx, bank connected at V)
+        box.style.display = "block";
+        box.innerHTML = `
+    <div class="result-row"><span class="result-label">Fuqia reaktive e kondensatorit (Qc)</span><span class="result-value">${Qc.toFixed(2)} kVAr</span></div>
+    <div class="result-row"><span class="result-label">Kapaciteti i përafërt (C)</span><span class="result-value">${C_uF.toFixed(1)} µF</span></div>
+    <div class="note">Vlera e C-së është përafruese për një bankë kondensatorësh të lidhur në tensionin e dhënë. Për zgjedhje finale kontrollo katalogun e prodhuesit.</div>
+  `;
+      }
+    </script>
+  </body>
+</html>
